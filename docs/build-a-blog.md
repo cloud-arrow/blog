@@ -79,7 +79,7 @@ theme:
 
 #### 写作
 
-markdown的写作软件我用的是[typora](https://typora.io/),其他支持软件也都行,只要能写markdown就可以。其中有个点要注意下，markdown是有[方言](https://www.markdown.xyz/getting-started/#markdown-%E6%96%B9%E8%A8%80)的，不能的解析器可能不太一样。标准都是支持的，不标准的部分要看一下具体的解析器，如本文的[mkdocs](https://github.com/mkdocs/mkdocs)
+markdown的写作软件我用的是[typora](https://typora.io/),其他支持软件也都行,只要能写markdown就可以。其中有个点要注意下，markdown是有[方言](https://www.markdown.xyz/getting-started/#markdown-%E6%96%B9%E8%A8%80)的，不同的解析器可能不太一样。标准都是支持的，不标准的部分要看一下具体的解析器，如本文的[mkdocs](https://github.com/mkdocs/mkdocs)
 
 我目前是用typora写完，直接保存在blog/docs目录中
 

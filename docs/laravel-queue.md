@@ -461,6 +461,7 @@ job出列
             }
         });
     }
+    ----------------------------------------------
     //从队列里获取下一个可用的job
     protected function getNextAvailableJob($queue)
     {
@@ -503,7 +504,7 @@ job出列
             $this->container, $this, $job, $this->connectionName, $queue
         );
     }
-    //
+    ----------------------------------------------
     protected function markJobAsReserved($job)
     {
         //设置job的reserved_at为当前时间

@@ -12,7 +12,7 @@
 
 微服务的通信
 
-## 图解
+## 流程概览
 
 ### 生产者发布job的流程	
 
@@ -1350,7 +1350,7 @@ class PendingDispatch
     
 ```
 
-## 消费者消费job的实现
+## 消费者处理job的实现
 
 消费者是一个常驻进程，laravel通过php artisan queue:work 实现启动消费者进程处理job
 
@@ -1994,9 +1994,13 @@ protected function getRandomId()
 
 ```
 
+## 参考链接
 
+https://visualgo.net/zh/list
 
+https://www.runoob.com/redis/redis-intro.html
 
+https://mp.weixin.qq.com/s/JFoYyBTithSqP8_x8-5jXQ
 
 
 

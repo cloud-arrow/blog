@@ -26,6 +26,8 @@
 
 ## 队列实现
 
+![](assets/images/class-re.png)
+
 ### QueueManager 类
 
 - 维护队列的驱动(driver)
@@ -112,7 +114,7 @@
     }
 ```
 
-### Connectors（驱动/连接器） 
+### Connector（驱动/连接器） 
 
 laravel 提供了6种驱动的实现，分别是database, sync,sqs,redis,null, beanstalkd.这些驱动都实现了ConnectorInterface接口的connect方法，去建立连接。
 

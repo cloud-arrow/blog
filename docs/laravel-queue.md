@@ -14,7 +14,15 @@
 
 ## 图解
 
-画图
+### 生产者发布job的流程	
+
+![](assets/images/producer-to-queue.png)
+
+
+
+### 消费者处理job的流程
+
+![](assets/images/consumer-deal-job.png)
 
 ## 队列实现
 
@@ -22,7 +30,7 @@
 
 - 维护队列的驱动(driver)
 
-```
+```php
    
   	//数据内容如下
     [

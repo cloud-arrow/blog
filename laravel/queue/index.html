@@ -1,0 +1,2417 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<link href="../../assets/images/favicon.png" rel="icon"/>
+<meta content="mkdocs-1.3.1, mkdocs-material-8.4.2" name="generator"/>
+<title>队列源码解析及实践 - 尘埃</title>
+<link href="../../assets/stylesheets/main.69437709.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.cbb835fc.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+<link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>html.glightbox-open { overflow: initial; height: 100%; }</style><script src="../../assets/javascripts/glightbox.min.js"></script></head>
+<body data-md-color-accent="" data-md-color-primary="" data-md-color-scheme="default" dir="ltr">
+<script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#_1">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="尘埃" class="md-header__button md-logo" data-md-component="logo" href="../.." title="尘埃">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"></path></svg>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            尘埃
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              队列源码解析及实践
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="" data-md-color-media="" data-md-color-primary="" data-md-color-scheme="default" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_2" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"></path></svg>
+</label>
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="" data-md-color-media="" data-md-color-primary="" data-md-color-scheme="slate" id="__palette_2" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"></path></svg>
+</label>
+</form>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="尘埃" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="尘埃">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"></path></svg>
+</a>
+    尘埃
+  </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../..">
+        Welcome to MkDocs
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../build-a-blog/">
+        从0到1搭建博客
+      </a>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3">
+          Laravel
+          <span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-label="Laravel" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+          Laravel
+        </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+          队列源码解析及实践
+          <span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./">
+        队列源码解析及实践
+      </a>
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_2">
+    什么是队列
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_3">
+    队列可以解决哪些问题
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_4">
+    流程概览
+  </a>
+<nav aria-label="流程概览" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job">
+    生产者发布job的流程
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_1">
+    消费者处理job的流程
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_5">
+    队列实现
+  </a>
+<nav aria-label="队列实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queuemanager">
+    QueueManager 类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#connector">
+    Connector（驱动/连接器）
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queue">
+    Queue 接口和实现
+  </a>
+<nav aria-label="Queue 接口和实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queue_1">
+    queue接口
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queue_2">
+    queue实现
+  </a>
+<nav aria-label="queue实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#databasequeue">
+    DatabaseQueue类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#redisqueue">
+    RedisQueue类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_2">
+    Job 接口和实现
+  </a>
+<nav aria-label="Job 接口和实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_3">
+    job接口
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_4">
+    job实现
+  </a>
+<nav aria-label="job实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#databasejob">
+    DatabaseJob类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#redisjob">
+    RedisJob类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#callqueuedhandler">
+    CallQueuedHandler类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_5">
+    生产者分发job的实现
+  </a>
+<nav aria-label="生产者分发job的实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#pendingdispatch">
+    PendingDispatch 类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#dispatcher">
+    Dispatcher 类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_6">
+    消费者处理job的实现
+  </a>
+<nav aria-label="消费者处理job的实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queuework">
+    queue:work
+  </a>
+<nav aria-label="queue:work" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#workcommand">
+    WorkCommand类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#worker">
+    Worker类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queuerestart">
+    queue:restart
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_6">
+    实践案例
+  </a>
+<nav aria-label="实践案例" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_7">
+    队列卡住如何处理
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_8">
+    借助事件做监听排查问题
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#jobhash">
+    解决租户job的hash值不唯一
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_9">
+    参考链接
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_2">
+    什么是队列
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_3">
+    队列可以解决哪些问题
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_4">
+    流程概览
+  </a>
+<nav aria-label="流程概览" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job">
+    生产者发布job的流程
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_1">
+    消费者处理job的流程
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_5">
+    队列实现
+  </a>
+<nav aria-label="队列实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queuemanager">
+    QueueManager 类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#connector">
+    Connector（驱动/连接器）
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queue">
+    Queue 接口和实现
+  </a>
+<nav aria-label="Queue 接口和实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queue_1">
+    queue接口
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queue_2">
+    queue实现
+  </a>
+<nav aria-label="queue实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#databasequeue">
+    DatabaseQueue类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#redisqueue">
+    RedisQueue类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_2">
+    Job 接口和实现
+  </a>
+<nav aria-label="Job 接口和实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_3">
+    job接口
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_4">
+    job实现
+  </a>
+<nav aria-label="job实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#databasejob">
+    DatabaseJob类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#redisjob">
+    RedisJob类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#callqueuedhandler">
+    CallQueuedHandler类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_5">
+    生产者分发job的实现
+  </a>
+<nav aria-label="生产者分发job的实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#pendingdispatch">
+    PendingDispatch 类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#dispatcher">
+    Dispatcher 类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#job_6">
+    消费者处理job的实现
+  </a>
+<nav aria-label="消费者处理job的实现" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queuework">
+    queue:work
+  </a>
+<nav aria-label="queue:work" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#workcommand">
+    WorkCommand类
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#worker">
+    Worker类
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#queuerestart">
+    queue:restart
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_6">
+    实践案例
+  </a>
+<nav aria-label="实践案例" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_7">
+    队列卡住如何处理
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_8">
+    借助事件做监听排查问题
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#jobhash">
+    解决租户job的hash值不唯一
+  </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#_9">
+    参考链接
+  </a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1 id="_1">队列源码解析及实践</h1>
+<h2 id="_2">什么是队列</h2>
+<p>队列是一种先进先出(FIFO)数据结构。进数据的一端称为队尾，出数据的一端称为队头。将元素从队尾进入称为入队，将元素从队头弹出称为出队。</p>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/fifo.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/fifo.png"/></a></p>
+<h2 id="_3">队列可以解决哪些问题</h2>
+<p>同步转异步，降低耗时</p>
+<p>微服务的通信</p>
+<h2 id="_4">流程概览</h2>
+<h3 id="job">生产者发布job的流程</h3>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/producer-to-queue.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/producer-to-queue.png"/></a></p>
+<h3 id="job_1">消费者处理job的流程</h3>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/consumer-deal-job.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/consumer-deal-job.png"/></a></p>
+<h2 id="_5">队列实现</h2>
+<h3 id="queuemanager">QueueManager 类</h3>
+<ul>
+<li>维护队列的驱动(driver)</li>
+</ul>
+<pre><code class="language-php">
+    //数据内容如下
+    [
+    'Null'=&gt;function(){
+        return new NullConnector;
+    },
+    'Sync'=&gt;function(){
+        return new SyncConnector;
+    },
+    'Database'=&gt;function(){
+        return new DatabaseConnector($this-&gt;app['db']);
+    },
+    'redis'=&gt;function(){
+        return new RedisConnector($this-&gt;app['redis']);
+    },
+    'beanstalkd'=&gt;function(){
+        return new BeanstalkdConnector;
+    },
+    'sqs'=&gt;function(){
+        return new SqsConnector;
+    }
+
+    ];
+
+    //驱动数组
+    protected $connectors = [];
+
+    //添加驱动
+    public function addConnector($driver, Closure $resolver)
+    {
+        $this-&gt;connectors[$driver] = $resolver;
+    }
+</code></pre>
+<ul>
+<li>动态方法转发给默认队列的连接去处理（根据配置，通过驱动，建立队列的连接）</li>
+</ul>
+<pre><code>    //转发给默认队列的连接去处理
+    public function __call($method, $parameters)
+    {
+        return $this-&gt;connection()-&gt;$method(...$parameters);
+    }
+    //
+    public function connection($name = null)
+    {
+            //获取默认驱动
+            // $this-&gt;app['config']['queue.default']
+        $name = $name ?: $this-&gt;getDefaultDriver();
+
+        // If the connection has not been resolved yet we will resolve it now as all
+        // of the connections are resolved when they are actually needed so we do
+        // not make any unnecessary connection to the various queue end-points.
+        if (! isset($this-&gt;connections[$name])) {
+                //解析队列驱动的连接，并保存到connections属性
+            $this-&gt;connections[$name] = $this-&gt;resolve($name);
+
+            $this-&gt;connections[$name]-&gt;setContainer($this-&gt;app);
+        }
+
+        return $this-&gt;connections[$name];
+    }
+    //根据配置，建立队列驱动的连接
+    protected function resolve($name)
+    {
+        $config = $this-&gt;getConfig($name);
+
+        return $this-&gt;getConnector($config['driver'])
+                        -&gt;connect($config)
+                        -&gt;setConnectionName($name);
+    }
+    //从connectors属性拿到驱动
+    protected function getConnector($driver)
+    {
+        if (! isset($this-&gt;connectors[$driver])) {
+            throw new InvalidArgumentException("No connector for [$driver]");
+        }
+
+        return call_user_func($this-&gt;connectors[$driver]);
+    }
+</code></pre>
+<h3 id="connector">Connector（驱动/连接器）</h3>
+<p>laravel 提供了6种驱动的实现，分别是database, sync,sqs,redis,null, beanstalkd.这些驱动都实现了ConnectorInterface接口的connect方法，去建立连接。</p>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/connectors.png"><img alt="" src="../../assets/images/laravel/queue/connectors.png"/></a></p>
+<ul>
+<li>RedisConnector</li>
+</ul>
+<pre><code>    public function connect(array $config)
+    {
+        return new RedisQueue(
+            $this-&gt;redis, $config['queue'],
+            $config['connection'] ?? $this-&gt;connection,
+            $config['retry_after'] ?? 60,
+            $config['block_for'] ?? null
+        );
+    }
+</code></pre>
+<ul>
+<li>DatabaseConnector</li>
+</ul>
+<pre><code>    public function connect(array $config)
+    {
+        return new DatabaseQueue(
+            $this-&gt;connections-&gt;connection($config['connection'] ?? null),
+            $config['table'],
+            $config['queue'],
+            $config['retry_after'] ?? 60
+        );
+    }
+</code></pre>
+<ul>
+<li>SyncConnector</li>
+</ul>
+<pre><code>    public function connect(array $config)
+    {
+        return new SyncQueue;
+    }
+</code></pre>
+<ul>
+<li>NullConnector</li>
+</ul>
+<pre><code>    public function connect(array $config)
+    {
+        return new NullQueue;
+    }
+</code></pre>
+<ul>
+<li>SqsConnector</li>
+</ul>
+<pre><code>    public function connect(array $config)
+    {
+        $config = $this-&gt;getDefaultConfiguration($config);
+
+        if (! empty($config['key']) &amp;&amp; ! empty($config['secret'])) {
+            $config['credentials'] = Arr::only($config, ['key', 'secret', 'token']);
+        }
+
+        return new SqsQueue(
+            new SqsClient($config), $config['queue'], $config['prefix'] ?? ''
+        );
+    }
+</code></pre>
+<ul>
+<li>BeanstalkdConnector</li>
+</ul>
+<pre><code>    public function connect(array $config)
+    {
+        return new BeanstalkdQueue(
+            $this-&gt;pheanstalk($config),
+            $config['queue'],
+            $config['retry_after'] ?? Pheanstalk::DEFAULT_TTR,
+            $config['block_for'] ?? 0
+        );
+    }
+</code></pre>
+<h3 id="queue">Queue 接口和实现</h3>
+<p>RedisQueue，DatabaseQueue，SyncQueue，NullQueue，SqsQueue，BeanstalkdQueue等类全部实现了Queue接口</p>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/queue.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/queue.png"/></a></p>
+<h4 id="queue_1">queue接口</h4>
+<pre><code>interface Queue
+{
+    // 获取队列的长度
+    public function size($queue = null);
+
+    //job入列
+    public function push($job, $data = '', $queue = null);
+
+    //job入列
+    public function pushOn($queue, $job, $data = '');
+
+    //job入列
+    public function pushRaw($payload, $queue = null, array $options = []);
+
+    //job延迟入列
+    public function later($delay, $job, $data = '', $queue = null);
+
+    //job延迟入列
+    public function laterOn($queue, $delay, $job, $data = '');
+
+    //job批量入列
+    public function bulk($jobs, $data = '', $queue = null);
+
+    //出列
+    public function pop($queue = null);
+
+    //获取队列的连接名称
+    public function getConnectionName();
+
+    //设置队列的连接名称
+    public function setConnectionName($name);
+}
+</code></pre>
+<h4 id="queue_2">queue实现</h4>
+<p>介于篇幅，这里选择讲解DatabaseQueue和RedisQueue的实现</p>
+<h5 id="databasequeue">DatabaseQueue类</h5>
+<p>数据库队列用的是jobs的表做队列的存储</p>
+<pre><code>    Schema::create('jobs', function (Blueprint $table) {
+            $table-&gt;bigIncrements('id');
+            $table-&gt;string('queue')-&gt;index(); //队列名称
+            $table-&gt;longText('payload'); //荷载
+            $table-&gt;unsignedTinyInteger('attempts');//尝试次数,默认为0
+            $table-&gt;unsignedInteger('reserved_at')-&gt;nullable();//保留的时间点
+            $table-&gt;unsignedInteger('available_at');//可用的时间点，和延迟队列有关系
+            $table-&gt;unsignedInteger('created_at');//创建时间
+        });
+</code></pre>
+<p>获取指定队列的长度</p>
+<pre><code>    public function size($queue = null)
+    {
+        return $this-&gt;database-&gt;table($this-&gt;table)
+                    -&gt;where('queue', $this-&gt;getQueue($queue))
+                    -&gt;count();
+    }
+</code></pre>
+<p>job入列（push方法）</p>
+<pre><code>    //job入列
+    public function push($job, $data = '', $queue = null)
+    {
+        return $this-&gt;pushToDatabase($queue, $this-&gt;createPayload(
+            $job, $this-&gt;getQueue($queue), $data
+        ));
+    }
+    //插入jobs表
+    protected function pushToDatabase($queue, $payload, $delay = 0, $attempts = 0)
+    {
+        return $this-&gt;database-&gt;table($this-&gt;table)-&gt;insertGetId($this-&gt;buildDatabaseRecord(
+            $this-&gt;getQueue($queue), $payload, $this-&gt;availableAt($delay), $attempts
+        ));
+    }
+    //构建数据记录
+    protected function buildDatabaseRecord($queue, $payload, $availableAt, $attempts = 0)
+    {
+        return [
+            'queue' =&gt; $queue,
+            'attempts' =&gt; $attempts,
+            'reserved_at' =&gt; null,
+            'available_at' =&gt; $availableAt,
+            'created_at' =&gt; $this-&gt;currentTime(),
+            'payload' =&gt; $payload,
+        ];
+    }
+    // 可用时间=now+delay，和延迟队列队列有关
+    protected function availableAt($delay = 0)
+    {
+        $delay = $this-&gt;parseDateInterval($delay);
+
+        return $delay instanceof DateTimeInterface
+                            ? $delay-&gt;getTimestamp()
+                            : Carbon::now()-&gt;addRealSeconds($delay)-&gt;getTimestamp();
+    }
+    --------------------------------------------------------------------------------
+    // 创建荷载(payload)
+    protected function createPayload($job, $queue, $data = '')
+    {
+            //把job序列化为json
+        $payload = json_encode($this-&gt;createPayloadArray($job, $queue, $data));
+
+        if (JSON_ERROR_NONE !== json_last_error()) {
+            throw new InvalidPayloadException(
+                'Unable to JSON encode payload. Error code: '.json_last_error()
+            );
+        }
+
+        return $payload;
+    }
+
+    protected function createPayloadArray($job, $queue, $data = '')
+    {
+        return is_object($job)
+                    ? $this-&gt;createObjectPayload($job, $queue)
+                    : $this-&gt;createStringPayload($job, $queue, $data);
+    }
+    // 创建对象型的荷载
+    protected function createObjectPayload($job, $queue)
+    {
+        $payload = $this-&gt;withCreatePayloadHooks($queue, [
+            'displayName' =&gt; $this-&gt;getDisplayName($job),
+            'job' =&gt; 'Illuminate\Queue\CallQueuedHandler@call',
+            'maxTries' =&gt; $job-&gt;tries ?? null,
+            'delay' =&gt; $this-&gt;getJobRetryDelay($job),//多久重试
+            'timeout' =&gt; $job-&gt;timeout ?? null,
+            'timeoutAt' =&gt; $this-&gt;getJobExpiration($job),//超时时间点
+            'data' =&gt; [
+                'commandName' =&gt; $job,
+                'command' =&gt; $job,
+            ],
+        ]);
+
+        return array_merge($payload, [
+            'data' =&gt; [
+                'commandName' =&gt; get_class($job),
+                'command' =&gt; serialize(clone $job),
+            ],
+        ]);
+    }
+    // 创建字符串型的荷载
+    protected function createStringPayload($job, $queue, $data)
+    {
+        return $this-&gt;withCreatePayloadHooks($queue, [
+            'displayName' =&gt; is_string($job) ? explode('@', $job)[0] : null,
+            'job' =&gt; $job,
+            'maxTries' =&gt; null,
+            'delay' =&gt; null,
+            'timeout' =&gt; null,
+            'data' =&gt; $data,
+        ]);
+    }
+    //    
+    public function getJobRetryDelay($job)
+    {
+        if (! method_exists($job, 'retryAfter') &amp;&amp; ! isset($job-&gt;retryAfter)) {
+            return;
+        }
+                //retryAfter属性或者retryAfter方法
+        $delay = $job-&gt;retryAfter ?? $job-&gt;retryAfter();
+
+        return $delay instanceof DateTimeInterface
+                        ? $this-&gt;secondsUntil($delay) : $delay;
+    }
+
+    public function getJobExpiration($job)
+    {
+        if (! method_exists($job, 'retryUntil') &amp;&amp; ! isset($job-&gt;timeoutAt)) {
+            return;
+        }
+
+        $expiration = $job-&gt;timeoutAt ?? $job-&gt;retryUntil();
+
+        return $expiration instanceof DateTimeInterface
+                        ? $expiration-&gt;getTimestamp() : $expiration;
+    }
+
+</code></pre>
+<p>job入列（pushRaw方法）</p>
+<pre><code>    public function pushRaw($payload, $queue = null, array $options = [])
+    {
+        return $this-&gt;pushToDatabase($queue, $payload);
+    }
+</code></pre>
+<p>job入列（pushOn方法）</p>
+<pre><code>    public function pushOn($queue, $job, $data = '')
+    {
+        return $this-&gt;push($job, $data, $queue);
+    }
+</code></pre>
+<p>job批量入列（bulk方法）</p>
+<pre><code>    //批量的把job加入队列
+    public function bulk($jobs, $data = '', $queue = null)
+    {
+        foreach ((array) $jobs as $job) {
+            $this-&gt;push($job, $data, $queue);
+        }
+    }
+</code></pre>
+<p>job延迟入列（later方法）</p>
+<pre><code>    //和push方法差不多
+    public function later($delay, $job, $data = '', $queue = null)
+    {
+        return $this-&gt;pushToDatabase($queue, $this-&gt;createPayload(
+            $job, $this-&gt;getQueue($queue), $data
+        ), $delay);
+    }
+
+</code></pre>
+<p>job延迟入列（laterOn方法）</p>
+<pre><code>    //调用later方法
+    public function laterOn($queue, $delay, $job, $data = '')
+    {
+        return $this-&gt;later($delay, $job, $data, $queue);
+    }
+</code></pre>
+<p>job出列</p>
+<pre><code>    public function pop($queue = null)
+    {
+        $queue = $this-&gt;getQueue($queue);
+
+        return $this-&gt;database-&gt;transaction(function () use ($queue) {
+                //从队列里获取下一个可用的job
+            if ($job = $this-&gt;getNextAvailableJob($queue)) {
+                    //标记job的为保留 
+                return $this-&gt;marshalJob($queue, $job);
+            }
+        });
+    }
+    ----------------------------------------------
+    //从队列里获取下一个可用的job
+    protected function getNextAvailableJob($queue)
+    {
+        $job = $this-&gt;database-&gt;table($this-&gt;table)
+                    -&gt;lock($this-&gt;getLockForPopping())
+                    -&gt;where('queue', $this-&gt;getQueue($queue))
+                    -&gt;where(function ($query) {
+                        $this-&gt;isAvailable($query);
+                        $this-&gt;isReservedButExpired($query);
+                    })
+                    -&gt;orderBy('id', 'asc')
+                    -&gt;first();
+
+        return $job ? new DatabaseJobRecord((object) $job) : null;
+    }
+    // 当前时间比可用的时间点大，说明可被使用
+    protected function isAvailable($query)
+    {
+        $query-&gt;where(function ($query) {
+            $query-&gt;whereNull('reserved_at')
+                  -&gt;where('available_at', '&lt;=', $this-&gt;currentTime());
+        });
+    }
+    // 
+    protected function isReservedButExpired($query)
+    {
+        $expiration = Carbon::now()-&gt;subSeconds($this-&gt;retryAfter)-&gt;getTimestamp();
+
+        $query-&gt;orWhere(function ($query) use ($expiration) {
+            $query-&gt;where('reserved_at', '&lt;=', $expiration);
+        });
+    }
+
+    protected function marshalJob($queue, $job)
+    {
+       //标记job的为保留
+        $job = $this-&gt;markJobAsReserved($job);
+                //构建job对象
+        return new DatabaseJob(
+            $this-&gt;container, $this, $job, $this-&gt;connectionName, $queue
+        );
+    }
+    ----------------------------------------------
+    protected function markJobAsReserved($job)
+    {
+        //设置job的reserved_at为当前时间
+        //设置job的attempts的次数+1
+        $this-&gt;database-&gt;table($this-&gt;table)-&gt;where('id', $job-&gt;id)-&gt;update([
+            'reserved_at' =&gt; $job-&gt;touch(),
+            'attempts' =&gt; $job-&gt;increment(),
+        ]);
+
+        return $job;
+    }
+</code></pre>
+<h5 id="redisqueue">RedisQueue类</h5>
+<p>Redis队列用的是redis的list和sorted set做队列的存储</p>
+<p>获取指定队列的长度</p>
+<pre><code>    public function size($queue = null)
+    {
+        $queue = $this-&gt;getQueue($queue);
+                //通过lua脚本，计算长度值=queue + queue:delayed + queue:reserved
+        return $this-&gt;getConnection()-&gt;eval(
+            LuaScripts::size(), 3, $queue, $queue.':delayed', $queue.':reserved'
+        );
+    }
+    // https://redis.io/commands/zcard/
+    // https://redis.io/commands/llen/
+    public static function size()
+    {
+        return &lt;&lt;&lt;'LUA'
+return redis.call('llen', KEYS[1]) + redis.call('zcard', KEYS[2]) + redis.call('zcard', KEYS[3])
+LUA;
+    }
+</code></pre>
+<p>job入列（push方法）</p>
+<pre><code>    public function push($job, $data = '', $queue = null)
+    {
+        return $this-&gt;pushRaw($this-&gt;createPayload($job, $this-&gt;getQueue($queue), $data), $queue);
+    }
+
+    public function pushRaw($payload, $queue = null, array $options = [])
+    {
+        $this-&gt;getConnection()-&gt;eval(
+            LuaScripts::push(), 2, $this-&gt;getQueue($queue),
+            $this-&gt;getQueue($queue).':notify', $payload
+        );
+
+        return json_decode($payload, true)['id'] ?? null;
+    }
+    // https://redis.io/commands/rpush/
+    // list数据类型，job入列
+    public static function push()
+    {
+        return &lt;&lt;&lt;'LUA'
+-- Push the job onto the queue...
+redis.call('rpush', KEYS[1], ARGV[1])
+-- Push a notification onto the "notify" queue...
+redis.call('rpush', KEYS[2], 1)
+LUA;
+    }
+</code></pre>
+<p>job入列（pushRaw方法）</p>
+<pre><code>    public function pushRaw($payload, $queue = null, array $options = [])
+    {
+        $this-&gt;getConnection()-&gt;eval(
+            LuaScripts::push(), 2, $this-&gt;getQueue($queue),
+            $this-&gt;getQueue($queue).':notify', $payload
+        );
+
+        return json_decode($payload, true)['id'] ?? null;
+    }
+</code></pre>
+<p>job入列（pushOn方法）</p>
+<pre><code>    public function pushOn($queue, $job, $data = '')
+    {
+        return $this-&gt;push($job, $data, $queue);
+    }
+</code></pre>
+<p>job批量入列（bulk方法）</p>
+<pre><code>    public function bulk($jobs, $data = '', $queue = null)
+    {
+        foreach ((array) $jobs as $job) {
+            $this-&gt;push($job, $data, $queue);
+        }
+    }
+</code></pre>
+<p>job延迟入列（later方法）</p>
+<pre><code>    public function later($delay, $job, $data = '', $queue = null)
+    {
+        return $this-&gt;laterRaw($delay, $this-&gt;createPayload($job, $this-&gt;getQueue($queue), $data), $queue);
+    }
+    //sorted set数据类型
+    protected function laterRaw($delay, $payload, $queue = null)
+    {
+            // 延迟的时间点作为分数值
+        $this-&gt;getConnection()-&gt;zadd(
+            $this-&gt;getQueue($queue).':delayed', $this-&gt;availableAt($delay), $payload
+        );
+
+        return json_decode($payload, true)['id'] ?? null;
+    }
+
+    protected function availableAt($delay = 0)
+    {
+        $delay = $this-&gt;parseDateInterval($delay);
+
+        return $delay instanceof DateTimeInterface
+                            ? $delay-&gt;getTimestamp()
+                            : Carbon::now()-&gt;addRealSeconds($delay)-&gt;getTimestamp();
+    }
+</code></pre>
+<p>job延迟入列（laterOn方法）</p>
+<pre><code>    public function laterOn($queue, $delay, $job, $data = '')
+    {
+        return $this-&gt;later($delay, $job, $data, $queue);
+    }
+</code></pre>
+<p>job出列</p>
+<pre><code>    public function pop($queue = null)
+    {
+        //迁移  delayed or expired jobs 进入主队列
+        $this-&gt;migrate($prefixed = $this-&gt;getQueue($queue));
+                //获取下一个可用job
+        if (empty($nextJob = $this-&gt;retrieveNextJob($prefixed))) {
+            return;
+        }
+                //构建job对象
+        [$job, $reserved] = $nextJob;
+
+        if ($reserved) {
+            return new RedisJob(
+                $this-&gt;container, $this, $job,
+                $reserved, $this-&gt;connectionName, $queue ?: $this-&gt;default
+            );
+        }
+    }
+    -----------------------------------------------
+    //迁移  delayed or expired jobs 进入主队列
+    //queue:delayed -&gt; queue和queue:notify
+    //queue:reserved -&gt; queue和queue:notify
+    protected function migrate($queue)
+    {
+        $this-&gt;migrateExpiredJobs($queue.':delayed', $queue);
+
+        if (! is_null($this-&gt;retryAfter)) {
+            $this-&gt;migrateExpiredJobs($queue.':reserved', $queue);
+        }
+    }
+
+    public function migrateExpiredJobs($from, $to)
+    {
+        return $this-&gt;getConnection()-&gt;eval(
+            LuaScripts::migrateExpiredJobs(), 3, $from, $to, $to.':notify', $this-&gt;currentTime()
+        );
+    }
+
+    public static function migrateExpiredJobs()
+    {
+        return &lt;&lt;&lt;'LUA'
+-- Get all of the jobs with an expired "score"...
+//从根据当前时间分数值，获取范围成员
+local val = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1])
+
+-- If we have values in the array, we will remove them from the first queue
+-- and add them onto the destination queue in chunks of 100, which moves
+-- all of the appropriate jobs onto the destination queue very safely.
+if(next(val) ~= nil) then
+        //从queue:delayed或者queue:reserved 中删除指定范围的成员
+    redis.call('zremrangebyrank', KEYS[1], 0, #val - 1)
+    for i = 1, #val, 100 do
+            //往queue队列追加
+        redis.call('rpush', KEYS[2], unpack(val, i, math.min(i+99, #val)))
+        -- Push a notification for every job that was migrated...
+        ////往queue:notify队列追加
+        for j = i, math.min(i+99, #val) do
+            redis.call('rpush', KEYS[3], 1)
+        end
+    end
+end
+
+return val
+LUA;
+    }
+
+    ------------------------------------------------
+    //获取下一个可用job
+    protected function retrieveNextJob($queue, $block = true)
+    {
+        $nextJob = $this-&gt;getConnection()-&gt;eval(
+            LuaScripts::pop(), 3, $queue, $queue.':reserved', $queue.':notify',
+            $this-&gt;availableAt($this-&gt;retryAfter)
+        );
+
+        if (empty($nextJob)) {
+            return [null, null];
+        }
+
+        [$job, $reserved] = $nextJob;
+
+        if (! $job &amp;&amp; ! is_null($this-&gt;blockFor) &amp;&amp; $block &amp;&amp;
+            $this-&gt;getConnection()-&gt;blpop([$queue.':notify'], $this-&gt;blockFor)) {
+            return $this-&gt;retrieveNextJob($queue, false);
+        }
+
+        return [$job, $reserved];
+    }
+
+    public static function pop()
+    {
+        return &lt;&lt;&lt;'LUA'
+-- Pop the first job off of the queue...
+//从queue队列取出来一个job
+local job = redis.call('lpop', KEYS[1])
+local reserved = false
+
+if(job ~= false) then
+    -- Increment the attempt count and place job on the reserved queue...
+    //job数据转换为reserved
+    reserved = cjson.decode(job)
+    reserved['attempts'] = reserved['attempts'] + 1
+    reserved = cjson.encode(reserved)
+    //queue:reserved队列添加 reserved
+    redis.call('zadd', KEYS[2], ARGV[1], reserved)
+    //从queue:notify队列取出 
+    redis.call('lpop', KEYS[3])
+end
+
+return {job, reserved}
+LUA;
+    }
+</code></pre>
+<h3 id="job_2">Job 接口和实现</h3>
+<p>BeanstalkdJob,DatabaseJob,RedisJob,SqsJob,SyncJob等类全部实现了Job接口</p>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/job.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/job.png"/></a></p>
+<p>荷载(payload)的数据示范例子</p>
+<pre><code>{
+    "timeout":null,
+    "id":"DjD7u4epcrlFvVeqVKxa6ceCXdJFrHUg",
+    "data":{
+        "command":"O:36:\"Illuminate\\Events\\CallQueuedListener\":8:{s:5:\"class\";s:53:\"App\\Listeners\\Checkout\\CheckoutCreatedWebhookListener\";s:6:\"method\";s:6:\"handle\";s:4:\"data\";a:1:{i:0;O:35:\"App\\Events\\Checkout\\CheckoutCreated\":4:{s:4:\"uuid\";O:16:\"Ramsey\\Uuid\\Uuid\":1:{s:6:\"string\";s:36:\"2175696f-ad1f-4341-ad90-bc7914242d96\";}s:5:\"topic\";s:16:\"checkouts\/create\";s:4:\"data\";O:45:\"Illuminate\\Contracts\\Database\\ModelIdentifier\":4:{s:5:\"class\";s:19:\"App\\Models\\Checkout\";s:2:\"id\";i:33046;s:9:\"relations\";a:0:{}s:10:\"connection\";s:9:\"wordpress\";}s:8:\"settings\";a:1:{s:6:\"locale\";s:2:\"en\";}}}s:5:\"tries\";i:19;s:10:\"retryAfter\";N;s:9:\"timeoutAt\";N;s:7:\"timeout\";N;s:6:\"\u0000*\u0000job\";N;}",
+        "commandName":"Illuminate\\Events\\CallQueuedListener"
+    },
+    "displayName":"App\\Listeners\\Checkout\\CheckoutCreatedWebhookListener",
+    "timeoutAt":null,
+    "job":"Illuminate\\Queue\\CallQueuedHandler@call",
+    "maxTries":19,
+    "delay":null,
+    "attempts":1
+}
+</code></pre>
+<h4 id="job_3">job接口</h4>
+<pre><code>interface Job
+{
+    //获取job的标识
+    public function getJobId();
+
+    //获取反序列化的荷载payload
+    public function payload();
+
+    //从payload里面，解析job索引对应的类和方法，并调用
+    //执行job
+    public function fire();
+
+        //释放原来job，重新发布一个新的job进入队列
+    public function release($delay = 0);
+
+        //是否已经释放
+    public function isReleased();
+
+    //从队列删除当前job
+    public function delete();
+
+    //是否已经删除
+    public function isDeleted();
+
+    //是否已经删除或者释放
+    public function isDeletedOrReleased();
+
+    //获取已经尝试的次数
+    public function attempts();
+
+    //是否已经失败
+    public function hasFailed();
+
+    //标记当前job失败
+    public function markAsFailed();
+
+    //失败处理流程
+    public function fail($e = null);
+
+    //获取允许的最大尝试次数
+    public function maxTries();
+
+    //获取job可运行的秒数
+    public function timeout();
+
+    //获取job超时的时间点
+    public function timeoutAt();
+
+    //获取job类
+    public function getName();
+
+    //解析job类名称
+    public function resolveName();
+
+    //获取所属的连接名称
+    public function getConnectionName();
+
+    //获取所属的队列名称
+    public function getQueue();
+
+    //获取job的字符串数据
+    public function getRawBody();
+}
+</code></pre>
+<h4 id="job_4">job实现</h4>
+<p>介于篇幅，这里选择讲解DatabaseJob和RedisJob的实现</p>
+<h5 id="databasejob">DatabaseJob类</h5>
+<p>DatabaseJob在job出队的时候被实例（DatabaseQueue-&gt;pop()）</p>
+<p>构造函数 </p>
+<pre><code>    public function __construct(Container $container, DatabaseQueue $database, $job, $connectionName, $queue)
+    {
+        $this-&gt;job = $job;//对应
+        $this-&gt;queue = $queue;
+        $this-&gt;database = $database;
+        $this-&gt;container = $container;
+        $this-&gt;connectionName = $connectionName;
+    }
+</code></pre>
+<p>获取job的标识</p>
+<pre><code>    public function getJobId()
+    {
+            //对应jobs表的id字段
+        return $this-&gt;job-&gt;id;
+    }
+</code></pre>
+<p>获取荷载payload</p>
+<pre><code>    public function payload()
+    {
+            //对应jobs表的payload字段
+        return json_decode($this-&gt;getRawBody(), true);
+    }
+    public function getRawBody()
+    {
+        return $this-&gt;job-&gt;payload;
+    }
+</code></pre>
+<p>执行job(关键)</p>
+<pre><code>    public function fire()
+    {
+        $payload = $this-&gt;payload();
+                // Illuminate\Queue\CallQueuedHandler@call
+        [$class, $method] = JobName::parse($payload['job']);
+
+        ($this-&gt;instance = $this-&gt;resolve($class))-&gt;{$method}($this, $payload['data']);
+    }
+    protected function resolve($class)
+    {
+        return $this-&gt;container-&gt;make($class);
+    }
+</code></pre>
+<p>删除原来job，重新发布一个新的job进入队列</p>
+<pre><code>    public function release($delay = 0)
+    {
+        //打上被释放的标记
+        parent::release($delay);
+                // 先从队列里删除当前job
+        $this-&gt;delete();
+                //重新添加一个job到队列
+        return $this-&gt;database-&gt;release($this-&gt;queue, $this-&gt;job, $delay);
+    }
+    //打上被释放的标记
+    public function release($delay = 0)
+    {
+        $this-&gt;released = true;
+    }
+</code></pre>
+<p>是否已经释放</p>
+<pre><code>    public function isReleased()
+    {
+        return $this-&gt;released;
+    }
+</code></pre>
+<p>从队列删除当前job</p>
+<pre><code>    public function delete()
+    {
+        parent::delete();
+
+        $this-&gt;database-&gt;deleteReserved($this-&gt;queue, $this-&gt;job-&gt;id);
+    }
+    public function delete()
+    {
+        $this-&gt;deleted = true;
+    }
+</code></pre>
+<p>是否已经删除</p>
+<pre><code>    public function isDeleted()
+    {
+        return $this-&gt;deleted;
+    }
+</code></pre>
+<p>是否已经删除或者释放</p>
+<pre><code>    public function isDeletedOrReleased()
+    {
+        return $this-&gt;isDeleted() || $this-&gt;isReleased();
+    }
+</code></pre>
+<p>获取已经尝试的次数</p>
+<pre><code>    public function attempts()
+    {
+        //对应jobs表的attempts字段
+        return (int) $this-&gt;job-&gt;attempts;
+    }
+</code></pre>
+<p>是否已经失败</p>
+<pre><code>    public function hasFailed()
+    {
+        return $this-&gt;failed;
+    }
+</code></pre>
+<p>标记当前job失败</p>
+<pre><code>    public function markAsFailed()
+    {
+        $this-&gt;failed = true;
+    }
+</code></pre>
+<p>失败处理流程</p>
+<pre><code>    public function fail($e = null)
+    {
+            //标记当前job失败
+        $this-&gt;markAsFailed();
+                //当前job已经删除，跳出
+        if ($this-&gt;isDeleted()) {
+            return;
+        }
+
+        try {
+            // If the job has failed, we will delete it, call the "failed" method and then call
+            // an event indicating the job has failed so it can be logged if needed. This is
+            // to allow every developer to better keep monitor of their failed queue jobs.
+            //从队列删除当前job
+            $this-&gt;delete();
+                        //调用当前job的failed方法
+            $this-&gt;failed($e);
+        } finally {
+                //发布JobFailed事件
+            $this-&gt;resolve(Dispatcher::class)-&gt;dispatch(new JobFailed(
+                $this-&gt;connectionName, $this, $e ?: new ManuallyFailedException
+            ));
+        }
+    }
+
+    protected function failed($e)
+    {
+        $payload = $this-&gt;payload();
+
+        [$class, $method] = JobName::parse($payload['job']);
+                //解析job对象，并调用failed方法
+        if (method_exists($this-&gt;instance = $this-&gt;resolve($class), 'failed')) {
+            $this-&gt;instance-&gt;failed($payload['data'], $e);
+        }
+    }
+
+    public function failed(array $data, $e)
+    {
+        $command = unserialize($data['command']);
+
+        if (method_exists($command, 'failed')) {
+            $command-&gt;failed($e);
+        }
+    }
+</code></pre>
+<p>获取允许的最大尝试次数</p>
+<pre><code>    public function maxTries()
+    {
+        return $this-&gt;payload()['maxTries'] ?? null;
+    }
+</code></pre>
+<p>获取job可运行的秒数</p>
+<pre><code>    public function timeout()
+    {
+        return $this-&gt;payload()['timeout'] ?? null;
+    }
+</code></pre>
+<p>获取job超时的时间点</p>
+<pre><code>    public function timeoutAt()
+    {
+        return $this-&gt;payload()['timeoutAt'] ?? null;
+    }
+</code></pre>
+<p>获取job类</p>
+<pre><code>    public function getName()
+    {
+        return $this-&gt;payload()['job'];
+    }
+</code></pre>
+<p>解析job类名称</p>
+<pre><code>    public function resolveName()
+    {
+        return JobName::resolve($this-&gt;getName(), $this-&gt;payload());
+    }
+
+    public static function resolve($name, $payload)
+    {
+        if (! empty($payload['displayName'])) {
+            return $payload['displayName'];
+        }
+
+        return $name;
+    }
+</code></pre>
+<p>获取连接的名称</p>
+<pre><code>    public function getConnectionName()
+    {
+            //构造函数传入
+        return $this-&gt;connectionName;
+    }
+</code></pre>
+<p>获取所属的队列名称</p>
+<pre><code>    public function getQueue()
+    {
+        //构造函数传入
+        return $this-&gt;queue;
+    }
+</code></pre>
+<p>获取job的字符串数据</p>
+<pre><code>    public function getRawBody()
+    {
+        return $this-&gt;job-&gt;payload;
+    }
+</code></pre>
+<h5 id="redisjob">RedisJob类</h5>
+<p>RedisJob在job出队的时候被实例（RedisQueue-&gt;pop()）</p>
+<p>构造函数</p>
+<pre><code>    public function __construct(Container $container, RedisQueue $redis, $job, $reserved, $connectionName, $queue)
+    {
+        // The $job variable is the original job JSON as it existed in the ready queue while
+        // the $reserved variable is the raw JSON in the reserved queue. The exact format
+        // of the reserved job is required in order for us to properly delete its data.
+        $this-&gt;job = $job;
+        $this-&gt;redis = $redis;
+        $this-&gt;queue = $queue;
+        $this-&gt;reserved = $reserved;
+        $this-&gt;container = $container;
+        $this-&gt;connectionName = $connectionName;
+
+        $this-&gt;decoded = $this-&gt;payload();
+    }
+</code></pre>
+<p>获取job的标识</p>
+<pre><code>    public function getJobId()
+    {
+        return $this-&gt;decoded['id'] ?? null;
+    }
+</code></pre>
+<p>删除原来job，重新发布一个新的job进入队列</p>
+<pre><code>    public function release($delay = 0)
+    {
+       //打上释放标记
+        parent::release($delay);
+
+        $this-&gt;redis-&gt;deleteAndRelease($this-&gt;queue, $this, $delay);
+    }
+
+    public function deleteAndRelease($queue, $job, $delay)
+    {
+        $queue = $this-&gt;getQueue($queue);
+                //从queue:reserved队列删除
+                //向queue:delayed队列添加
+        $this-&gt;getConnection()-&gt;eval(
+            LuaScripts::release(), 2, $queue.':delayed', $queue.':reserved',
+            $job-&gt;getReservedJob(), $this-&gt;availableAt($delay)
+        );
+    }
+
+    public static function release()
+    {
+        return &lt;&lt;&lt;'LUA'
+-- Remove the job from the current queue...
+redis.call('zrem', KEYS[2], ARGV[1])
+
+-- Add the job onto the "delayed" queue...
+redis.call('zadd', KEYS[1], ARGV[2], ARGV[1])
+
+return true
+LUA;
+    }
+</code></pre>
+<p>其他方法和上面都一致，省略</p>
+<h3 id="callqueuedhandler">CallQueuedHandler类</h3>
+<h2 id="job_5">生产者分发job的实现</h2>
+<p>通过bus分发job到队列</p>
+<h4 id="pendingdispatch">PendingDispatch 类</h4>
+<pre><code>class PendingDispatch
+{
+    /**
+     * The job.
+     *
+     * @var mixed
+     */
+    protected $job;
+
+    //构造函数，传入job对象
+    public function __construct($job)
+    {
+        $this-&gt;job = $job;
+    }
+
+    // 帮job对象设置connection属性
+    public function onConnection($connection)
+    {
+        $this-&gt;job-&gt;onConnection($connection);
+
+        return $this;
+    }
+
+    //帮job对象设置queue属性
+    public function onQueue($queue)
+    {
+        $this-&gt;job-&gt;onQueue($queue);
+
+        return $this;
+    }
+
+
+    public function allOnConnection($connection)
+    {
+        $this-&gt;job-&gt;allOnConnection($connection);
+
+        return $this;
+    }
+
+    /**
+     * Set the desired queue for the chain.
+     *
+     * @param  string|null  $queue
+     * @return $this
+     */
+    public function allOnQueue($queue)
+    {
+        $this-&gt;job-&gt;allOnQueue($queue);
+
+        return $this;
+    }
+
+    //帮job对象设置delay属性
+    public function delay($delay)
+    {
+        $this-&gt;job-&gt;delay($delay);
+
+        return $this;
+    }
+
+    //帮job设置chain属性（任务链）
+    public function chain($chain)
+    {
+        $this-&gt;job-&gt;chain($chain);
+
+        return $this;
+    }
+
+    // 析构函数 转发该job
+    public function __destruct()
+    {
+        app(Dispatcher::class)-&gt;dispatch($this-&gt;job);
+    }
+}
+</code></pre>
+<h4 id="dispatcher">Dispatcher 类</h4>
+<pre><code>
+    public function dispatch($command)
+    {
+            //如果job有现实ShouldQueue接口，则转发到队列
+        if ($this-&gt;queueResolver &amp;&amp; $this-&gt;commandShouldBeQueued($command)) {
+                //转发到队列
+            return $this-&gt;dispatchToQueue($command);
+        }
+
+        return $this-&gt;dispatchNow($command);
+    }
+    -----------------------------------------
+    //转发到队列
+    public function dispatchToQueue($command)
+    {       //获取连接
+        $connection = $command-&gt;connection ?? null;
+                //解析出Queue对象
+        $queue = call_user_func($this-&gt;queueResolver, $connection);
+
+        if (! $queue instanceof Queue) {
+            throw new RuntimeException('Queue resolver did not return a Queue implementation.');
+        }
+
+        if (method_exists($command, 'queue')) {
+            return $command-&gt;queue($queue, $command);
+        }
+                //发布到队列
+        return $this-&gt;pushCommandToQueue($queue, $command);
+    }
+    //根据job对象的属性，push到队列
+    //参考Queue类的方法
+    protected function pushCommandToQueue($queue, $command)
+    {
+        if (isset($command-&gt;queue, $command-&gt;delay)) {
+            return $queue-&gt;laterOn($command-&gt;queue, $command-&gt;delay, $command);
+        }
+
+        if (isset($command-&gt;queue)) {
+            return $queue-&gt;pushOn($command-&gt;queue, $command);
+        }
+
+        if (isset($command-&gt;delay)) {
+            return $queue-&gt;later($command-&gt;delay, $command);
+        }
+
+        return $queue-&gt;push($command);
+    }
+
+
+
+</code></pre>
+<h2 id="job_6">消费者处理job的实现</h2>
+<p>消费者是一个常驻进程，laravel通过php artisan queue:work 实现启动消费者进程处理job</p>
+<h4 id="queuework">queue:work</h4>
+<h5 id="workcommand">WorkCommand类</h5>
+<p>命令参数，默认值</p>
+<pre><code>queue:work
+        {connection? : The name of the queue connection to work} // 连接
+        {--queue= : The names of the queues to work} //队列
+        {--daemon : Run the worker in daemon mode (Deprecated)} // 运行为守护模式
+        {--once : Only process the next job on the queue} 
+        {--stop-when-empty : Stop when the queue is empty} //当队列为空，停止
+        {--delay=0 : The number of seconds to delay failed jobs}
+        {--force : Force the worker to run even in maintenance mode} //强制worker运行在维护模式
+        {--memory=128 : The memory limit in megabytes} // 内存限制 
+        {--sleep=3 : Number of seconds to sleep when no job is available} //当没有job可用，睡n秒
+        {--timeout=60 : The number of seconds a child process can run} //子进程可运行的秒数
+        {--tries=1 : Number of times to attempt a job before logging it failed} //尝试次数
+</code></pre>
+<p>消费入口</p>
+<pre><code>    public function handle()
+    {
+            //有提供--force命令行参数，worker睡眠
+        if ($this-&gt;downForMaintenance() &amp;&amp; $this-&gt;option('once')) {
+            return $this-&gt;worker-&gt;sleep($this-&gt;option('sleep'));
+        }
+
+        // We'll listen to the processed and failed events so we can write information
+        // to the console as jobs are processed, which will let the developer watch
+        // which jobs are coming through a queue and be informed on its progress.
+         //注册JobProcessing，JobProcessed，JobFailed事件和监听
+        $this-&gt;listenForEvents();
+
+        $connection = $this-&gt;argument('connection')
+                        ?: $this-&gt;laravel['config']['queue.default'];
+
+        // We need to get the right queue for the connection which is set in the queue
+        // configuration file for the application. We will pull it based on the set
+        // connection being run for the queue operation currently being executed.
+        $queue = $this-&gt;getQueue($connection);
+                // 运行worker
+        $this-&gt;runWorker(
+            $connection, $queue
+        );
+    }
+    ---------------------------------------------------
+    //注册JobProcessing，JobProcessed，JobFailed事件和监听
+    protected function listenForEvents()
+    {
+        $this-&gt;laravel['events']-&gt;listen(JobProcessing::class, function ($event) {
+                //控制台输出信息
+            $this-&gt;writeOutput($event-&gt;job, 'starting');
+        });
+
+        $this-&gt;laravel['events']-&gt;listen(JobProcessed::class, function ($event) {
+            $this-&gt;writeOutput($event-&gt;job, 'success');
+        });
+
+        $this-&gt;laravel['events']-&gt;listen(JobFailed::class, function ($event) {
+            $this-&gt;writeOutput($event-&gt;job, 'failed');
+
+            $this-&gt;logFailedJob($event);
+        });
+    }
+
+    protected function writeOutput(Job $job, $status)
+    {
+        switch ($status) {
+            case 'starting':
+                return $this-&gt;writeStatus($job, 'Processing', 'comment');
+            case 'success':
+                return $this-&gt;writeStatus($job, 'Processed', 'info');
+            case 'failed':
+                return $this-&gt;writeStatus($job, 'Failed', 'error');
+        }
+    }
+    ---------------------------------------------------
+    // 运行worker，具体的执行交由Worker类去处理
+    protected function runWorker($connection, $queue)
+    {
+        $this-&gt;worker-&gt;setCache($this-&gt;cache);
+                //如果有提供--once命令行参数，调用runNextJob方法，否则调用daemon
+        return $this-&gt;worker-&gt;{$this-&gt;option('once') ? 'runNextJob' : 'daemon'}(
+            $connection, $queue, $this-&gt;gatherWorkerOptions()
+        );
+    }
+</code></pre>
+<h5 id="worker">Worker类</h5>
+<pre><code>    public function daemon($connectionName, $queue, WorkerOptions $options)
+    {
+            //注册信号处理
+        if ($this-&gt;supportsAsyncSignals()) {
+            $this-&gt;listenForSignals();
+        }
+
+        $lastRestart = $this-&gt;getTimestampOfLastQueueRestart();
+                //无限循环
+        while (true) {
+            // Before reserving any jobs, we will make sure this queue is not paused and
+            // if it is we will just pause this worker for a given amount of time and
+            // make sure we do not need to kill this worker process off completely.
+            //处于暂停或维护模式状态，要暂停worker
+            if (! $this-&gt;daemonShouldRun($options, $connectionName, $queue)) {
+                $this-&gt;pauseWorker($options, $lastRestart);
+
+                continue;
+            }
+
+            // First, we will attempt to get the next job off of the queue. We will also
+            // register the timeout handler and reset the alarm for this job so it is
+            // not stuck in a frozen state forever. Then, we can fire off this job.
+            //从队列取出job
+            $job = $this-&gt;getNextJob(
+                $this-&gt;manager-&gt;connection($connectionName), $queue
+            );
+                        //注册闹钟信号，设置超时处理
+            if ($this-&gt;supportsAsyncSignals()) {
+                $this-&gt;registerTimeoutHandler($job, $options);
+            }
+
+            // If the daemon should run (not in maintenance mode, etc.), then we can run
+            // fire off this job for processing. Otherwise, we will need to sleep the
+            // worker so no more jobs are processed until they should be processed.
+            // 运行job
+            if ($job) {
+                $this-&gt;runJob($job, $connectionName, $options);
+            } else {
+                $this-&gt;sleep($options-&gt;sleep);
+            }
+                        //重置闹钟信号
+            if ($this-&gt;supportsAsyncSignals()) {
+                $this-&gt;resetTimeoutHandler();
+            }
+
+            // Finally, we will check to see if we have exceeded our memory limits or if
+            // the queue should restart based on other indications. If so, we'll stop
+            // this worker and let whatever is "monitoring" it restart the process.
+            //再此检查是否有必要停止
+            $this-&gt;stopIfNecessary($options, $lastRestart, $job);
+        }
+    }
+    ---------------------------------
+    //注册信号处理
+    //参考 https://wiki.swoole.com/#/other/signal
+    protected function listenForSignals()
+    {
+        pcntl_async_signals(true);
+                //注册终止信号
+        pcntl_signal(SIGTERM, function () {
+            $this-&gt;shouldQuit = true;
+        });
+                //注册用户自定义信号2
+        pcntl_signal(SIGUSR2, function () {
+            $this-&gt;paused = true;
+        });
+                // 如果停止，继续执行
+        pcntl_signal(SIGCONT, function () {
+            $this-&gt;paused = false;
+        });
+    }
+    ---------------------------------
+    // 平滑重启有关
+    protected function getTimestampOfLastQueueRestart()
+    {
+        if ($this-&gt;cache) {
+            return $this-&gt;cache-&gt;get('illuminate:queue:restart');
+        }
+    }
+    ---------------------------------
+    // 非（暂停或维护模式）等状态，可运行
+    protected function daemonShouldRun(WorkerOptions $options, $connectionName, $queue)
+    {
+        return ! ((($this-&gt;isDownForMaintenance)() &amp;&amp; ! $options-&gt;force) ||
+            $this-&gt;paused ||
+            $this-&gt;events-&gt;until(new Looping($connectionName, $queue)) === false);
+    }
+
+    protected function pauseWorker(WorkerOptions $options, $lastRestart)
+    {
+        //睡眠
+        $this-&gt;sleep($options-&gt;sleep &gt; 0 ? $options-&gt;sleep : 1);
+                //如果有必要停止worker
+        $this-&gt;stopIfNecessary($options, $lastRestart);
+    }
+    //处于这几种状态要停止
+    protected function stopIfNecessary(WorkerOptions $options, $lastRestart, $job = null)
+    {
+        if ($this-&gt;shouldQuit) {  //shouldQuit属性打上标记的，SIGTERM信号注册有控制
+            $this-&gt;stop();
+        } elseif ($this-&gt;memoryExceeded($options-&gt;memory)) { //超过设置的内存限制（--memory参数）
+            $this-&gt;stop(12);
+        } elseif ($this-&gt;queueShouldRestart($lastRestart)) { //
+            $this-&gt;stop();
+        } elseif ($options-&gt;stopWhenEmpty &amp;&amp; is_null($job)) {//当队列为空，停止
+            $this-&gt;stop();
+        }
+    }
+    //超过设置的内存限制
+    public function memoryExceeded($memoryLimit)
+    {
+        return (memory_get_usage(true) / 1024 / 1024) &gt;= $memoryLimit;
+    }
+    //获取的重启的标识和上次不一致，说明有更新重启标识
+    protected function queueShouldRestart($lastRestart)
+    {
+        return $this-&gt;getTimestampOfLastQueueRestart() != $lastRestart;
+    }
+    ---------------------------------
+    //从队列取出job
+    protected function getNextJob($connection, $queue)
+    {
+        try {
+            foreach (explode(',', $queue) as $queue) {
+                    // Queue对象pop
+                if (! is_null($job = $connection-&gt;pop($queue))) {
+                    return $job;
+                }
+            }
+        } catch (Exception $e) {
+                //记录异常
+            $this-&gt;exceptions-&gt;report($e);
+                        //如果连接断开，打上shouldQuit标识
+            $this-&gt;stopWorkerIfLostConnection($e);
+
+            $this-&gt;sleep(1);
+        } catch (Throwable $e) {
+            //记录异常
+            $this-&gt;exceptions-&gt;report($e = new FatalThrowableError($e));
+                        //如果连接断开，打上shouldQuit标识
+            $this-&gt;stopWorkerIfLostConnection($e);
+
+            $this-&gt;sleep(1);
+        }
+    }
+    //连接断开，打上shouldQuit标识
+    protected function stopWorkerIfLostConnection($e)
+    {
+        if ($this-&gt;causedByLostConnection($e)) {
+            $this-&gt;shouldQuit = true;
+        }
+    }
+    //根据异常信息，判断是否包含连接断开的信息
+    protected function causedByLostConnection(Throwable $e)
+    {
+        $message = $e-&gt;getMessage();
+
+        return Str::contains($message, [
+            'server has gone away',
+            'no connection to the server',
+            'Lost connection',
+            'is dead or not enabled',
+            'Error while sending',
+            'decryption failed or bad record mac',
+            'server closed the connection unexpectedly',
+            'SSL connection has been closed unexpectedly',
+            'Error writing data to the connection',
+            'Resource deadlock avoided',
+            'Transaction() on null',
+            'child connection forced to terminate due to client_idle_limit',
+            'query_wait_timeout',
+            'reset by peer',
+            'Physical connection is not usable',
+            'TCP Provider: Error code 0x68',
+            'ORA-03114',
+            'Packets out of order. Expected',
+            'Adaptive Server connection failed',
+            'Communication link failure',
+            'connection is no longer usable',
+            'Login timeout expired',
+            'SQLSTATE[HY000] [2002] Connection refused',
+            'running with the --read-only option so it cannot execute this statement',
+            'The connection is broken and recovery is not possible. The connection is marked by the client driver as unrecoverable. No attempt was made to restore the connection.',
+            'SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo failed: Try again',
+            'SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo failed: Name or service not known',
+            'SQLSTATE[HY000]: General error: 7 SSL SYSCALL error: EOF detected',
+            'SQLSTATE[HY000] [2002] Connection timed out',
+            'SSL: Connection timed out',
+            'SQLSTATE[HY000]: General error: 1105 The last transaction was aborted due to Seamless Scaling. Please retry.',
+            'Temporary failure in name resolution',
+            'SSL: Broken pipe',
+            'SQLSTATE[08S01]: Communication link failure',
+            'SQLSTATE[08006] [7] could not connect to server: Connection refused Is the server running on host',
+            'SQLSTATE[HY000]: General error: 7 SSL SYSCALL error: No route to host',
+            'The client was disconnected by the server because of inactivity. See wait_timeout and interactive_timeout for configuring this behavior.',
+            'SQLSTATE[08006] [7] could not translate host name',
+            'TCP Provider: Error code 0x274C',
+        ]);
+    }
+     ---------------------------------
+    //注册超时处理 
+    protected function registerTimeoutHandler($job, WorkerOptions $options)
+    {
+        // We will register a signal handler for the alarm signal so that we can kill this
+        // process if it is running too long because it has frozen. This uses the async
+        // signals supported in recent versions of PHP to accomplish it conveniently.
+        //注册闹钟信号
+        pcntl_signal(SIGALRM, function () use ($job, $options) {
+            if ($job) {
+                    //如果job有达到限制，调用job对象的fail方法
+                $this-&gt;markJobAsFailedIfWillExceedMaxAttempts(
+                    $job-&gt;getConnectionName(), $job, (int) $options-&gt;maxTries, $this-&gt;maxAttemptsExceededException($job)
+                );
+            }
+                        //杀死worker进程
+            $this-&gt;kill(1);
+        });
+
+        pcntl_alarm(
+            max($this-&gt;timeoutForJob($job, $options), 0)
+        );
+    }
+    //获取超时的值
+    protected function timeoutForJob($job, WorkerOptions $options)
+    {
+            // job如果有timeout值，就用job的，否则用命令行默认的（---timeout）
+        return $job &amp;&amp; ! is_null($job-&gt;timeout()) ? $job-&gt;timeout() : $options-&gt;timeout;
+    }
+
+    public function kill($status = 0)
+    {
+            //发布WorkerStopping事件
+        $this-&gt;events-&gt;dispatch(new WorkerStopping($status));
+                //kill 进程
+        if (extension_loaded('posix')) {
+            posix_kill(getmypid(), SIGKILL);
+        }
+                //退出
+        exit($status);
+    }
+    // 如果job有达到限制，调用job对象的fail方法
+    protected function markJobAsFailedIfAlreadyExceedsMaxAttempts($connectionName, $job, $maxTries)
+    {
+        $maxTries = ! is_null($job-&gt;maxTries()) ? $job-&gt;maxTries() : $maxTries;
+
+        $timeoutAt = $job-&gt;timeoutAt();
+                //未超时，跳出
+        if ($timeoutAt &amp;&amp; Carbon::now()-&gt;getTimestamp() &lt;= $timeoutAt) {
+            return;
+        }
+                // 未达到最大尝试次数，跳出
+        if (! $timeoutAt &amp;&amp; ($maxTries === 0 || $job-&gt;attempts() &lt;= $maxTries)) {
+            return;
+        }
+                //调用job对象的fail方法
+        $this-&gt;failJob($job, $e = $this-&gt;maxAttemptsExceededException($job));
+
+        throw $e;
+    }
+    //参考job对象的fail方法
+    protected function failJob($job, $e)
+    {
+        return $job-&gt;fail($e);
+    }
+      ---------------------------------
+    //运行job
+    protected function runJob($job, $connectionName, WorkerOptions $options)
+    {
+        try {
+            return $this-&gt;process($connectionName, $job, $options);
+        } catch (Exception $e) {
+                //记录异常
+            $this-&gt;exceptions-&gt;report($e);
+                        //如果连接断开，打上shouldQuit标识
+            $this-&gt;stopWorkerIfLostConnection($e);
+        } catch (Throwable $e) {
+                //记录异常
+            $this-&gt;exceptions-&gt;report($e = new FatalThrowableError($e));
+                        // 如果连接断开，打上shouldQuit标识
+            $this-&gt;stopWorkerIfLostConnection($e);
+        }
+    }
+    // 处理job
+    public function process($connectionName, $job, WorkerOptions $options)
+    {
+        try {
+            // First we will raise the before job event and determine if the job has already ran
+            // over its maximum attempt limits, which could primarily happen when this job is
+            // continually timing out and not actually throwing any exceptions from itself.
+            //发布JobProcessing事件
+            $this-&gt;raiseBeforeJobEvent($connectionName, $job);
+                        //如果job有达到限制，调用job对象的fail方法
+            $this-&gt;markJobAsFailedIfAlreadyExceedsMaxAttempts(
+                $connectionName, $job, (int) $options-&gt;maxTries
+            );
+                        // 如果job已经删除，发布JobProcessed事件
+            if ($job-&gt;isDeleted()) {
+                return $this-&gt;raiseAfterJobEvent($connectionName, $job);
+            }
+
+            // Here we will fire off the job and let it process. We will catch any exceptions so
+            // they can be reported to the developers logs, etc. Once the job is finished the
+            // proper events will be fired to let any listeners know this job has finished.
+            //执行job
+            $job-&gt;fire();
+                        // 发布JobProcessed事件
+            $this-&gt;raiseAfterJobEvent($connectionName, $job);
+        } catch (Exception $e) {
+            $this-&gt;handleJobException($connectionName, $job, $options, $e);
+        } catch (Throwable $e) {
+            $this-&gt;handleJobException(
+                $connectionName, $job, $options, new FatalThrowableError($e)
+            );
+        }
+    }
+    // 发布JobProcessing事件
+    protected function raiseBeforeJobEvent($connectionName, $job)
+    {
+        $this-&gt;events-&gt;dispatch(new JobProcessing(
+            $connectionName, $job
+        ));
+    }
+    发布JobProcessed事件
+    protected function raiseAfterJobEvent($connectionName, $job)
+    {
+        $this-&gt;events-&gt;dispatch(new JobProcessed(
+            $connectionName, $job
+        ));
+    }
+    //处理job异常
+    protected function handleJobException($connectionName, $job, WorkerOptions $options, $e)
+    {
+        try {
+            // First, we will go ahead and mark the job as failed if it will exceed the maximum
+            // attempts it is allowed to run the next time we process it. If so we will just
+            // go ahead and mark it as failed now so we do not have to release this again.
+            if (! $job-&gt;hasFailed()) {
+                $this-&gt;markJobAsFailedIfWillExceedMaxAttempts(
+                    $connectionName, $job, (int) $options-&gt;maxTries, $e
+                );
+            }
+                        // 发布JobExceptionOccurred事件
+            $this-&gt;raiseExceptionOccurredJobEvent(
+                $connectionName, $job, $e
+            );
+        } finally {
+            // If we catch an exception, we will attempt to release the job back onto the queue
+            // so it is not lost entirely. This'll let the job be retried at a later time by
+            // another listener (or this same one). We will re-throw this exception after.
+            if (! $job-&gt;isDeleted() &amp;&amp; ! $job-&gt;isReleased() &amp;&amp; ! $job-&gt;hasFailed()) {
+                $job-&gt;release(
+                    method_exists($job, 'delaySeconds') &amp;&amp; ! is_null($job-&gt;delaySeconds())
+                                ? $job-&gt;delaySeconds()
+                                : $options-&gt;delay
+                );
+            }
+        }
+
+        throw $e;
+    }
+
+    protected function raiseExceptionOccurredJobEvent($connectionName, $job, $e)
+    {
+        $this-&gt;events-&gt;dispatch(new JobExceptionOccurred(
+            $connectionName, $job, $e
+        ));
+    }
+
+</code></pre>
+<h3 id="queuerestart">queue:restart</h3>
+<p>队列平滑重启</p>
+<pre><code>    public function handle()
+    {
+            //缓存设置重启标识
+        $this-&gt;cache-&gt;forever('illuminate:queue:restart', $this-&gt;currentTime());
+
+        $this-&gt;info('Broadcasting queue restart signal.');
+    }
+</code></pre>
+<h2 id="_6">实践案例</h2>
+<h3 id="_7">队列卡住如何处理</h3>
+<ul>
+<li>做告警</li>
+</ul>
+<p>通过上面学习Queue对象知道有个size方法，可以获取队列的长度。RedisQueue的size长度计算规则=llen queue + zcard queue:delayed + zcard queue:reserved。运维拿到这个规则后，通过协程扫店铺的链接，获取到长度，做出了队列告警的面板。</p>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/alert.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/alert.png"/></a></p>
+<ul>
+<li>
+<p>扩容，增加消费者，提高消费能力</p>
+</li>
+<li>
+<p>排查堵住的原因，可能是消费进程开的少了，也可能是job执行时间太久。一般我们也是借助worker面板，看job的耗时,再分析具体的业务</p>
+</li>
+</ul>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/worker-da.jpg"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/worker-da.jpg"/></a></p>
+<h3 id="_8">借助事件做监听排查问题</h3>
+<p>之前线上有出现队列丢失或者不执行的问题，我们利用队列提供的各种事件，监听job生命周期，来排查job在哪个环节丢掉的。</p>
+<p>队列内置事件</p>
+<table>
+<thead>
+<tr>
+<th align="left">事件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">JobProcessing</td>
+<td>job将被处理事件</td>
+</tr>
+<tr>
+<td align="left">JobProcessed</td>
+<td>job已经被处理事件</td>
+</tr>
+<tr>
+<td align="left">JobFailed</td>
+<td>job已经失败事件</td>
+</tr>
+<tr>
+<td align="left">JobExceptionOccurred</td>
+<td>job发生异常事件</td>
+</tr>
+<tr>
+<td align="left">Looping</td>
+<td></td>
+</tr>
+<tr>
+<td align="left">WorkerStopping</td>
+<td>worker将停止事件</td>
+</tr>
+</tbody>
+</table>
+<p>我们自己扩展了事件，来监听job生命周期，把job的执行过程记录到数据库，做分析用。实现过程也是参考了laravel/horizon包</p>
+<p>关键代码</p>
+<pre><code>class RedisQueue extends BaseQueue
+{
+
+    public function pushRaw($payload, $queue = null, array $options = [])
+    {
+        return tap(parent::pushRaw($payload, $queue, $options), function () use ($payload, $queue) {
+            $this-&gt;event($this-&gt;getQueue($queue), new JobPushed($payload));//扩展事件
+        });
+    }
+
+
+    protected function laterRaw($delay, $payload, $queue = null)
+    {
+        return tap(parent::laterRaw($delay, $payload, $queue), function () use ($payload, $queue) {
+            $this-&gt;event($this-&gt;getQueue($queue), new JobPushed($payload));//扩展事件
+        });
+    }
+    public function deleteReserved($queue, $job)
+    {
+        parent::deleteReserved($queue, $job);
+        $this-&gt;event($this-&gt;getQueue($queue), new JobDeleted($job, $job-&gt;getReservedJob()));//扩展事件
+    }
+    public function deleteAndRelease($queue, $job, $delay)
+    {
+        parent::deleteAndRelease($queue, $job, $delay);
+        $this-&gt;event($this-&gt;getQueue($queue), new JobReleased($job, $job-&gt;getReservedJob()));//扩展事件
+    }
+
+    protected function event($queue, $event)
+    {
+        if ($this-&gt;container &amp;&amp; $this-&gt;container-&gt;bound(Dispatcher::class)) {
+            $queue = Str::replaceFirst('queues:', '', $queue);
+            $this-&gt;container-&gt;make(Dispatcher::class)-&gt;dispatch(
+                $event-&gt;connection($this-&gt;getConnectionName())-&gt;queue($queue)
+            );
+        }
+    }
+}
+
+class JobLifeServiceProvider extends ServiceProvider
+{
+
+    public function register()
+    {
+        $this-&gt;app-&gt;resolving(QueueManager::class, function ($manager) {
+            $manager-&gt;addConnector('redis', function () {
+                return new RedisConnector($this-&gt;app['redis']);
+            });
+        });
+    }
+    //给内置事件和扩展事件挂入监听
+    public function boot()
+    {
+        Queue::before(function (JobProcessing $event) {
+            $job=$event-&gt;job;
+            $jobLife='before';
+            $this-&gt;log($job, $jobLife);
+        });
+        Queue::after(function (JobProcessed $event) {
+            $job=$event-&gt;job;
+            $jobLife='after';
+            $this-&gt;log($job, $jobLife);
+        });
+        Queue::failing(function (JobFailed $event) {
+            $job=$event-&gt;job;
+            $jobLife='failing';
+            $this-&gt;log($job, $jobLife, $event-&gt;exception-&gt;getTraceAsString());
+        });
+        Queue::exceptionOccurred(function (JobExceptionOccurred $event) {
+            $job=$event-&gt;job;
+            $jobLife='exceptionOccurred';
+            $this-&gt;log($job, $jobLife, $event-&gt;exception-&gt;getTraceAsString());
+        });
+        Queue::stopping(function (WorkerStopping $event) {
+            var_dump('stopping', $event-&gt;status);
+        });
+
+        Event::listen(JobPushed::class, function (JobPushed $event) {
+            $this-&gt;log2($event, 'JobPushed');
+        });
+        Event::listen(JobReleased::class, function (JobReleased $event) {
+            $this-&gt;log2($event, 'JobReleased');
+        });
+        Event::listen(JobReserved::class, function (JobReserved $event) {
+            $this-&gt;log2($event, 'JobReserved');
+        });
+        Event::listen(JobDeleted::class, function (JobDeleted $event) {
+            $this-&gt;log2($event, 'JobDeleted');
+        });
+    }
+}
+
+
+</code></pre>
+<h3 id="jobhash">解决租户job的hash值不唯一</h3>
+<p>租户模式下，通过worker面板，发现job的唯一标识会重复，这就导致统计job的耗时有问题</p>
+<p>耗时计算=job的processed时间 - job的processing时间</p>
+<p><a class="glightbox" href="../../assets/images/laravel/queue/hash.png"><img alt="" loading="lazy" src="../../assets/images/laravel/queue/hash.png"/></a></p>
+<p>laravel的队列生成的算法如下，肯定会重复</p>
+<pre><code>    protected function getRandomId()
+    {
+        return Str::random(32);
+    }
+</code></pre>
+<p>我们改为uuid算法</p>
+<pre><code>protected function getRandomId()
+    {
+        return Uuid::uuid4();
+    }
+
+</code></pre>
+<h2 id="_9">参考链接</h2>
+<p>https://visualgo.net/zh/list</p>
+<p>https://www.runoob.com/redis/redis-intro.html</p>
+<p>https://mp.weixin.qq.com/s/JFoYyBTithSqP8_x8-5jXQ</p>
+<p>​   </p>
+<!-- Giscus -->
+<h2 id="__comments">Comments</h2>
+<!-- Replace with generated snippet -->
+<script async="" crossorigin="anonymous" data-category="Announcements" data-category-id="DIC_kwDOH4zB-s4CRF0M" data-emit-metadata="0" data-input-position="bottom" data-lang="zh-CN" data-loading="lazy" data-mapping="pathname" data-reactions-enabled="1" data-repo="cloud-arrow/blog" data-repo-id="R_kgDOH4zB-g" data-strict="0" data-theme="preferred_color_scheme" src="https://giscus.app/client.js">
+</script>
+<!-- Synchronize Giscus theme with palette -->
+<script>
+    var giscus = document.querySelector("script[src*=giscus]")
+
+    /* Set palette on initial load */
+    var palette = __md_get("__palette")
+    if (palette && typeof palette.color === "object") {
+        var theme = palette.color.scheme === "slate" ? "dark" : "light"
+        giscus.setAttribute("data-theme", theme)
+    }
+
+    /* Register event handlers after documented loaded */
+    document.addEventListener("DOMContentLoaded", function() {
+        var ref = document.querySelector("[data-md-component=palette]")
+        ref.addEventListener("change", function() {
+            var palette = __md_get("__palette")
+            if (palette && typeof palette.color === "object") {
+                var theme = palette.color.scheme === "slate" ? "dark" : "light"
+
+                /* Instruct Giscus to change theme */
+                var frame = document.querySelector(".giscus-frame")
+                frame.contentWindow.postMessage(
+                    { giscus: { setConfig: { theme } } },
+                    "https://giscus.app"
+                )
+            }
+        })
+    })
+</script>
+</article>
+</div>
+</div>
+</main>
+<footer class="md-footer">
+<nav aria-label="Footer" class="md-footer__inner md-grid">
+<a aria-label="Previous: 从0到1搭建博客" class="md-footer__link md-footer__link--prev" href="../../build-a-blog/" rel="prev">
+<div class="md-footer__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"></path></svg>
+</div>
+<div class="md-footer__title">
+<div class="md-ellipsis">
+<span class="md-footer__direction">
+                Previous
+              </span>
+              从0到1搭建博客
+            </div>
+</div>
+</a>
+</nav>
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+<script src="../../assets/javascripts/bundle.9c69f0bc.min.js"></script>
+<script>document$.subscribe(() => {const lightbox = GLightbox({"touchNavigation": true, "loop": false, "width": "100%", "height": "auto", "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom"});})</script></body>
+</html>

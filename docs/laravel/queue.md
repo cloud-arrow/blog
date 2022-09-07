@@ -1,10 +1,10 @@
-# laravel队列源码解析及实践
+# 队列源码解析及实践
 
 ## 什么是队列
 
 队列是一种先进先出(FIFO)数据结构。进数据的一端称为队尾，出数据的一端称为队头。将元素从队尾进入称为入队，将元素从队头弹出称为出队。
 
-![](assets/images/fifo.png)
+![](../assets/images/laravel/queue/fifo.png){ loading=lazy }
 
 ## 队列可以解决哪些问题
 
@@ -16,17 +16,16 @@
 
 ### 生产者发布job的流程	
 
-![](assets/images/producer-to-queue.png)
+![](../assets/images/laravel/queue/producer-to-queue.png)
 
 
 
 ### 消费者处理job的流程
 
-![](assets/images/consumer-deal-job.png)
+![](../assets/images/laravel/queue/consumer-deal-job.png)
 
 ## 队列实现
 
-![](assets/images/class-re.png)
 
 ### QueueManager 类
 
@@ -118,7 +117,7 @@
 
 laravel 提供了6种驱动的实现，分别是database, sync,sqs,redis,null, beanstalkd.这些驱动都实现了ConnectorInterface接口的connect方法，去建立连接。
 
-![](assets/images/connectors.png)
+![](../assets/images/laravel/queue/connectors.png)
 
 - RedisConnector
 
@@ -201,7 +200,7 @@ laravel 提供了6种驱动的实现，分别是database, sync,sqs,redis,null, b
 
 RedisQueue，DatabaseQueue，SyncQueue，NullQueue，SqsQueue，BeanstalkdQueue等类全部实现了Queue接口
 
-![](assets/images/queue.png)
+![](../assets/images/laravel/queue/queue.png)
 
 #### queue接口
 
@@ -767,7 +766,7 @@ LUA;
 
 BeanstalkdJob,DatabaseJob,RedisJob,SqsJob,SyncJob等类全部实现了Job接口
 
-![](assets/images/job.png)
+![](../assets/images/laravel/queue/job.png)
 
 荷载(payload)的数据示范例子
 
@@ -1845,13 +1844,13 @@ queue:work
 
 通过上面学习Queue对象知道有个size方法，可以获取队列的长度。RedisQueue的size长度计算规则=llen queue + zcard queue:delayed + zcard queue:reserved。运维拿到这个规则后，通过协程扫店铺的链接，获取到长度，做出了队列告警的面板。
 
-![](assets/images/alert.png)
+![](../assets/images/laravel/queue/alert.png)
 
 - 扩容，增加消费者，提高消费能力
 
 - 排查堵住的原因，可能是消费进程开的少了，也可能是job执行时间太久。一般我们也是借助worker面板，看job的耗时,再分析具体的业务
 
-![](assets/images/worker-da.jpg)
+![](../assets/images/laravel/queue/worker-da.jpg)
 
 ### 借助事件做监听排查问题
 
@@ -1974,7 +1973,7 @@ class JobLifeServiceProvider extends ServiceProvider
 
 耗时计算=job的processed时间 - job的processing时间
 
-![](assets/images/hash.png)
+![](../assets/images/laravel/queue/hash.png)
 
 
 
